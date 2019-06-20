@@ -16,7 +16,13 @@ namespace EmpyrionInventorySort
 
     public class PlayerSortings
     {
-        public Dictionary<int, int> Bag     { get; set; } = new Dictionary<int, int>();
-        public Dictionary<int, int> Toolbar { get; set; } = new Dictionary<int, int>();
+        public List<ItemSlot> Bag     { get; set; } = new List<ItemSlot>();
+        public List<ItemSlot> Toolbar { get; set; } = new List<ItemSlot>();
+    }
+
+    public class ItemSlot
+    {
+        public int ItemId { get; set; }
+        public int SlotPos { get; set; }
     }
 }

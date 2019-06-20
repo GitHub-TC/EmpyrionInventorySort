@@ -41,8 +41,8 @@ namespace EmpyrionInventorySort
             var P = await Request_Player_Info(chatInfo.playerId.ToId());
 
             var sort = new PlayerSortings() {
-                Bag     = P.bag    .ToDictionary(I => I.id, I => (int)I.slotIdx),
-                Toolbar = P.toolbar.ToDictionary(I => I.id, I => (int)I.slotIdx),
+                Bag     = P.bag?    .Select(I => new ItemSlot() { ItemId = I.id, SlotPos = (int)I.slotIdx }).ToList() ?? new List<ItemSlot>(),
+                Toolbar = P.toolbar?.Select(I => new ItemSlot() { ItemId = I.id, SlotPos = (int)I.slotIdx }).ToList() ?? new List<ItemSlot>(),
             };
             Configuration.Current.PlayerSortings.AddOrUpdate(P.steamId, sort, (S, O) => sort);
             Configuration.Save();
@@ -96,17 +96,20 @@ namespace EmpyrionInventorySort
             }
         }
 
-        private static ItemStack[] GetFromSorting(Dictionary<int, int> sort, List<ItemStack> allitems, int maxSlots)
+        private static ItemStack[] GetFromSorting(List<ItemSlot> sort, List<ItemStack> allitems, int maxSlots)
         {
-            var result = Enumerable.Range(0, maxSlots).Select(I => new ItemStack() { slotIdx = (byte)I }).ToArray();
+            var result   = Enumerable.Range(0, maxSlots).Select(I => new ItemStack() { slotIdx = (byte)I }).ToArray();
+            var sortList = new List<ItemSlot>(sort);
 
             for (int i = 0; i < allitems.Count; i++)
             {
                 var currentItem = allitems[i];
-                if(sort.TryGetValue(currentItem.id, out var idxPos))
+                var found = sortList.FirstOrDefault(I => I.ItemId == currentItem.id);
+                if (found != null)
                 {
-                    currentItem.slotIdx = (byte)idxPos;
-                    result[idxPos] = currentItem;
+                    sortList.Remove(found);
+                    currentItem.slotIdx = (byte)found.SlotPos;
+                    result[found.SlotPos] = currentItem;
                     allitems.RemoveAt(i--);
                 }
             }
