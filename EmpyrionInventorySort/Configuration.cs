@@ -1,7 +1,6 @@
 ﻿using EmpyrionNetAPIDefinitions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace EmpyrionInventorySort
@@ -11,13 +10,19 @@ namespace EmpyrionInventorySort
         [JsonConverter(typeof(StringEnumConverter))]
         public LogLevel LogLevel { get; set; } = LogLevel.Message;
         public string ChatCommandPrefix { get; set; } = "/\\";
-        public ConcurrentDictionary<string, PlayerSortings> PlayerSortings { get; set; } = new ConcurrentDictionary<string, PlayerSortings>();
     }
 
     public class PlayerSortings
     {
-        public List<ItemSlot> Bag     { get; set; } = new List<ItemSlot>();
-        public List<ItemSlot> Toolbar { get; set; } = new List<ItemSlot>();
+        public string PlayerName { get; set; }
+        public int LastUsedSlot { get; set; }
+        public SortingSlot[] SortingSlot { get; set; } = new SortingSlot[10];
+    }
+
+    public class SortingSlot
+    {
+        public List<ItemSlot> Bag     { get; set; }
+        public List<ItemSlot> Toolbar { get; set; }
     }
 
     public class ItemSlot

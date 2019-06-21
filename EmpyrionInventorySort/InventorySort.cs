@@ -29,33 +29,59 @@ namespace EmpyrionInventorySort
             InitializeConfiguration();
             LogLevel = Configuration.Current.LogLevel;
             ChatCommandManager.CommandPrefix = Configuration.Current.ChatCommandPrefix;
+            var chatChar = ChatCommandManager.CommandPrefix?.FirstOrDefault() ?? '/';
 
-            ChatCommands.Add(new ChatCommand(@"s",         (I, A) => SortInventory(I), "Execute sorting"));
-            ChatCommands.Add(new ChatCommand(@"sort",      (I, A) => SortInventory(I), "Execute sorting"));
-            ChatCommands.Add(new ChatCommand(@"sort set",  (I, A) => SortSet(I), "Saves the current sorting"));
-            ChatCommands.Add(new ChatCommand(@"sort help", (I, A) => DisplayHelp(I.playerId, ""), "Display help"));
+            ChatCommands.Add(new ChatCommand(@"s",                          (I, A) => SortInventory(I, A),  $"Execute sorting, latest slot from '{chatChar}sort set' or '{chatChar}sort' command"));
+            ChatCommands.Add(new ChatCommand(@"sort (?<number>\d)",         (I, A) => SortInventory(I, A),  $"Execute sorting (0..9). Set the slot for '{chatChar}s'"));
+            ChatCommands.Add(new ChatCommand(@"sort set (?<number>\d)",     (I, A) => SortSet(I, A),        $"Saves the current sorting slot (0..9). Set the slot for '{chatChar}s'"));
+            ChatCommands.Add(new ChatCommand(@"sort help",                  (I, A) => DisplayHelp(I.playerId, ""), "Display help"));
         }
 
-        private async Task SortSet(ChatInfo chatInfo)
+        private async Task SortSet(ChatInfo chatInfo, Dictionary<string, string> args)
         {
             var P = await Request_Player_Info(chatInfo.playerId.ToId());
 
-            var sort = new PlayerSortings() {
+            var currentPlayerSort = GetPlayerSorting(P);
+
+            log($"{currentPlayerSort} -> {currentPlayerSort.Current} -> {currentPlayerSort.ConfigFilename}", LogLevel.Error);
+
+            int sortSlot = currentPlayerSort.Current.LastUsedSlot;
+            if (args.TryGetValue("number", out string numberArgs)) int.TryParse(numberArgs, out sortSlot);
+            currentPlayerSort.Current.LastUsedSlot = sortSlot;
+
+            currentPlayerSort.Current.SortingSlot[sortSlot] = new SortingSlot() {
                 Bag     = P.bag?    .Select(I => new ItemSlot() { ItemId = I.id, SlotPos = (int)I.slotIdx }).ToList() ?? new List<ItemSlot>(),
                 Toolbar = P.toolbar?.Select(I => new ItemSlot() { ItemId = I.id, SlotPos = (int)I.slotIdx }).ToList() ?? new List<ItemSlot>(),
             };
-            Configuration.Current.PlayerSortings.AddOrUpdate(P.steamId, sort, (S, O) => sort);
-            Configuration.Save();
+
+            currentPlayerSort.Current.PlayerName = P.playerName;
+            currentPlayerSort.Save();
 
             MessagePlayer(chatInfo.playerId, "Inventorysorting saved");
         }
 
-        private async Task SortInventory(ChatInfo chatInfo)
+        public ConfigurationManager<PlayerSortings> GetPlayerSorting(PlayerInfo player)
+        {
+            var sort = new ConfigurationManager<PlayerSortings>()
+            {
+                ConfigFilename = Path.Combine(EmpyrionConfiguration.SaveGameModPath, "Sortings", player.steamId + ".json")
+            };
+            sort.Load();
+            return sort;
+        }
+
+        private async Task SortInventory(ChatInfo chatInfo, Dictionary<string, string> args)
         {
             var P = await Request_Player_Info(chatInfo.playerId.ToId());
-            if (!Configuration.Current.PlayerSortings.TryGetValue(P.steamId, out var sort))
+
+            var currentPlayerSort = GetPlayerSorting(P);
+
+            int sortSlot = currentPlayerSort.Current.LastUsedSlot;
+            if (args.TryGetValue("number", out string numberArgs)) int.TryParse(numberArgs, out sortSlot);
+
+            if (currentPlayerSort.Current.SortingSlot[sortSlot] == null)
             {
-                MessagePlayer(chatInfo.playerId, $"Sorry no sorting saved. Please use '{ChatCommandManager.CommandPrefix?.FirstOrDefault()}sort set' before.");
+                MessagePlayer(chatInfo.playerId, $"Sorry no sorting saved. Please use '{ChatCommandManager.CommandPrefix?.FirstOrDefault()}sort set {sortSlot}' before.");
                 return;
             }
 
@@ -68,8 +94,8 @@ namespace EmpyrionInventorySort
                 return;
             }
 
-            var bag     = GetFromSorting(sort.Bag,     allitems, 40);
-            var toolbar = GetFromSorting(sort.Toolbar, allitems, 9);
+            var bag     = GetFromSorting(currentPlayerSort.Current.SortingSlot[sortSlot].Bag,     allitems, 40);
+            var toolbar = GetFromSorting(currentPlayerSort.Current.SortingSlot[sortSlot].Toolbar, allitems, 9);
 
             AddUnknownItems(allitems, bag);
             AddUnknownItems(allitems, toolbar);
@@ -79,6 +105,13 @@ namespace EmpyrionInventorySort
                 toolbar.ToArray(), 
                 bag    .ToArray()
             ));
+
+            if (currentPlayerSort.Current.LastUsedSlot != sortSlot)
+            {
+                currentPlayerSort.Current.PlayerName = P.playerName;
+                currentPlayerSort.Current.LastUsedSlot = sortSlot;
+                currentPlayerSort.Save();
+            }
 
             MessagePlayer(chatInfo.playerId, "Inventory sorted");
         }
@@ -119,6 +152,7 @@ namespace EmpyrionInventorySort
 
         private void InitializeConfiguration()
         {
+            ConfigurationManager<Configuration>.Log = log;
             Configuration = new ConfigurationManager<Configuration>()
             {
                 ConfigFilename = Path.Combine(EmpyrionConfiguration.SaveGameModPath, "Configuration.json")

@@ -12,9 +12,9 @@ Die 'unbekannten' Items werden vom Backpack an über die Toolbar in die freien S
 
 Die Kommandos funktionieren NUR im Fraktionschat!
 * \sort help : Zeigt die Kommandos der Mod an
-* \sort set => Speichert die Sortierung gemäß des aktuellen Backpacks und der Toolbar
-* \s => Sortiert das Backpack und die Toolbar
-* \sort => Sortiert das Backpack und die Toolbar
+* \sort set (0..9) => Speichert die Sortierung gemäß des aktuellen Backpacks und der Toolbar in dem gewählten Slot 0 bis 9. Setzt den aktuellen Slot.
+* \s => Sortiert das Backpack und die Toolbar mit dem aktuellen Slot
+* \sort (0..9) => Sortiert das Backpack und die Toolbar mit dem gewählten Slot 0 bis 9. Setzt den aktuellen Slot.
 
 ### Was kommt noch?
 hmmm, keine Ahnung :-)
@@ -41,9 +41,9 @@ The 'unknown' items are filled from the backpack via the toolbar in the free slo
 
 All commands only work in faction chat!
 * \sort help: Displays the commands of the mod
-* \sort set => Saves sorting according to the current backpack and toolbar
-* \s => Sort the Backpack and the Toolbar
-* \sort => Sorts the backpack and the toolbar
+* \sort set (0..9) => Saves the sort according to the current backpack and the toolbar in the selected slot 0 to 9. Sets the current slot.
+* \s => Sorts the backpack and toolbar with the current slot
+* \sort (0..9) => Sorts the backpack and the toolbar with the selected slot 0 to 9. Sets the current slot.
 
 ### Is that it?
 hmmm, no idea :-)
