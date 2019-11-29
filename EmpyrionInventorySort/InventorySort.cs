@@ -24,7 +24,7 @@ namespace EmpyrionInventorySort
         {
             GameAPI = dediAPI;
 
-            log($"**HandleEmpyrionTeleporter loaded: {string.Join(" ", Environment.GetCommandLineArgs())}", LogLevel.Message);
+            Log($"**HandleEmpyrionTeleporter loaded: {string.Join(" ", Environment.GetCommandLineArgs())}", LogLevel.Message);
 
             InitializeConfiguration();
             LogLevel = Configuration.Current.LogLevel;
@@ -43,7 +43,7 @@ namespace EmpyrionInventorySort
 
             var currentPlayerSort = GetPlayerSorting(P);
 
-            log($"{currentPlayerSort} -> {currentPlayerSort.Current} -> {currentPlayerSort.ConfigFilename}", LogLevel.Error);
+            Log($"{currentPlayerSort} -> {currentPlayerSort.Current} -> {currentPlayerSort.ConfigFilename}", LogLevel.Error);
 
             int sortSlot = currentPlayerSort.Current.LastUsedSlot;
             if (args.TryGetValue("number", out string numberArgs)) int.TryParse(numberArgs, out sortSlot);
@@ -152,7 +152,7 @@ namespace EmpyrionInventorySort
 
         private void InitializeConfiguration()
         {
-            ConfigurationManager<Configuration>.Log = log;
+            ConfigurationManager<Configuration>.Log = Log;
             Configuration = new ConfigurationManager<Configuration>()
             {
                 ConfigFilename = Path.Combine(EmpyrionConfiguration.SaveGameModPath, "Configuration.json")
